@@ -12,12 +12,14 @@ const EXCHANGE_RATE = { SNOWDN: 1000, KSDOG: 0.001 };
  */
 function simulateExchangeRequest(swapDetails) {
   return new Promise((resolve, reject) => {
-    // Simulating backend response
     setTimeout(() => {
+      console.log("Simulated exchange request with details:", swapDetails);
       if (Math.random() > 0.1) { // Simulate 90% success rate
         resolve({ success: true, txid: 'mock-txid-12345' });
       } else {
-        reject(new Error('Simulated backend error'));
+        const error = new Error('Simulated backend error');
+        reject(error);
+        console.error("Exchange simulation failed with error:", error.message);
       }
     }, 2000); // Simulated network delay
   });
@@ -43,7 +45,9 @@ function calculateExchangeAmount(amount, fromToken) {
  */
 function checkMinimumSwap(amount, token) {
   if (amount < MIN_SWAP_AMOUNT[token]) {
-    throw new Error(`Minimum amount not met. Need at least ${MIN_SWAP_AMOUNT[token]} ${token}.`);
+    const error = new Error(`Minimum amount not met. Need at least ${MIN_SWAP_AMOUNT[token]} ${token}.`);
+    console.error(error.message);
+    throw error;
   }
 }
 
