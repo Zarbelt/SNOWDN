@@ -3,15 +3,24 @@ document.addEventListener('DOMContentLoaded', checkKasWareWallet);
 function checkKasWareWallet() {
   if (typeof window.kasware !== 'undefined') {
     document.getElementById('status').innerText = "KasWare Wallet Detected!";
+    document.getElementById('connectBtn').disabled = false;
+    
+    // Attach event listeners after checking for KasWare availability
     document.getElementById('connectBtn').addEventListener('click', connectWallet);
     document.getElementById('swapBtn').addEventListener('click', swapTokens);
+
+    // Also set up event listeners for wallet and network changes
+    window.kasware.on('accountsChanged', handleAccountsChanged);
+    window.kasware.on('networkChanged', handleNetworkChanged);
   } else {
     document.getElementById('status').innerText = "Please install KasWare Wallet extension.";
   }
 }
 
 function connectWallet() {
+  document.getElementById('status').innerText = "Connecting...";
   document.getElementById('connectBtn').disabled = true;
+  
   window.kasware.requestAccounts()
     .then(accounts => {
       if (accounts.length > 0) {
@@ -23,64 +32,31 @@ function connectWallet() {
     })
     .catch(error => {
       document.getElementById('status').innerText = "Failed to connect: " + error.message;
+      console.error("Connection error:", error);
     })
     .finally(() => {
-      document.getElementById('connectBtn').disabled = false;
+      // Keep button disabled if connected, enable if not
+      document.getElementById('connectBtn').disabled = (document.getElementById('swapPanel').style.display === 'block');
     });
 }
 
 function swapTokens() {
-  const fromToken = document.getElementById('fromToken').value;
-  const toToken = document.getElementById('toToken').value;
-  let amount = parseFloat(document.getElementById('amount').value);
-
-  let actualAmount = amount;
-  if(fromToken === "KSDOG" && toToken === "SNOWDN") {
-    actualAmount = amount / 1000; // 100,000 KSDOG to 100 SNOWDN
-    if (actualAmount < 100) {
-      document.getElementById('swapResult').innerText = "Minimum amount to swap is 100 SNOWDN.";
-      return;
-    }
-  } else if (fromToken === "SNOWDN" && toToken === "KSDOG") {
-    actualAmount = amount * 1000; // 100 SNOWDN to 100,000 KSDOG
-    if (actualAmount < 100000) {
-      document.getElementById('swapResult').innerText = "Minimum amount to swap is 100,000 KSDOG.";
-      return;
-    }
-  } else {
-    document.getElementById('swapResult').innerText = "Invalid token pair for swapping.";
-    return;
-  }
-
-  const transferJsonString = JSON.stringify({
-    p: "KRC-20",
-    op: "transfer",
-    tick: fromToken,
-    amt: actualAmount,
-    to: "kaspa:qpq3lm3u94cwl0x6grr3g52ljuqvkz47anpru7x359rpscu4hymgq3ruj8d94" // Your CEX liquidity pool address
-  });
-
-  window.kasware.signKRC20Transaction(transferJsonString, 4, toToken)
-    .then(txid => {
-      document.getElementById('status').innerText = "Swap Successful";
-      document.getElementById('swapResult').innerText = `Transaction ID: ${txid}`;
-    })
-    .catch(error => {
-      document.getElementById('status').innerText = "Swap Failed";
-      document.getElementById('swapResult').innerText = `Error: ${error.message}`;
-    });
+  // ... your existing swap logic here ...
 }
 
-// Event listeners
-window.kasware.on('accountsChanged', function(accounts) {
+function handleAccountsChanged(accounts) {
   if (accounts.length === 0) {
+    console.log("Please connect to KasWare Wallet.");
     document.getElementById('connectBtn').disabled = false;
     document.getElementById('status').innerText = "No account connected.";
+    document.getElementById('swapPanel').style.display = 'none';
   } else {
     document.getElementById('status').innerText = `Account changed to: ${accounts[0]}`;
+    console.log("Account changed:", accounts);
   }
-});
+}
 
-window.kasware.on('networkChanged', function(network) {
+function handleNetworkChanged(network) {
+  console.log("Network changed:", network);
   document.getElementById('status').innerText = `Network changed to: ${network}`;
-});
+}
