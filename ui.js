@@ -1,3 +1,4 @@
+javascript
 /**
  * Update the exchange UI with calculated amounts.
  * @param {Event} event - The change event from the input or select.
@@ -10,6 +11,7 @@ function updateExchange(event) {
   document.getElementById('toAmount').value = calculateExchangeAmount(fromAmount, fromToken).toFixed(6);
   document.getElementById('toToken').value = toToken;
   document.getElementById('swapBtn').disabled = isNaN(fromAmount) || fromAmount <= 0;
+  console.log(`Exchange updated from ${fromAmount} ${fromToken} to ${document.getElementById('toAmount').value} ${toToken}`);
 }
 
 document.getElementById('fromToken').addEventListener('change', updateExchange);
