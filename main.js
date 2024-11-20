@@ -1,40 +1,59 @@
-// Simulated state
-let transactionDetected = false;
-const ENCRYPTED_PRIVATE_KEY = "YourEncryptedPrivateKeyHere";  // Replace with actual encrypted key
-
-function checkForTransaction() {
-    const transactionInput = prompt("Enter transaction details (e.g., '100 SNOWDN to kaspa:qpq3lm3u94cwl0x6grr3g52ljuqvkz47anpru7x359rpscu4hymgq3ruj8d94'):");
-    if (transactionInput && transactionInput.includes("100 SNOWDN")) {
-        transactionDetected = true;
-        document.getElementById('swap-status').innerText = "100 SNOWDN detected. Swap is now possible.";
-        document.getElementById('initiate-swap').disabled = false;
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.kasware !== 'undefined') {
+        document.getElementById('status').innerText = "KasWare Wallet Detected!";
+        document.getElementById('connectBtn').disabled = false;
+        window.kasware.on('accountsChanged', handleAccountsChanged);
+        window.kasware.on('networkChanged', handleNetworkChanged);
+        // Listen for swap confirmation from backend
+        window.kasware.on('swapConfirmation', handleSwapConfirmation);
     } else {
-        document.getElementById('swap-status').innerText = "No valid transaction detected.";
+        document.getElementById('status').innerText = "Please install KasWare Wallet extension.";
     }
-}
+});
 
-function simulateTokenSwap() {
-    if (!transactionDetected) {
-        document.getElementById('swap-status').innerText = "Please detect a transaction first.";
-        return;
-    }
-    
-    const password = prompt("Enter the service password for token swap:");
-    if (password) {
-        try {
-            CryptoJS.AES.decrypt(ENCRYPTED_PRIVATE_KEY, password).toString(CryptoJS.enc.Utf8);
-            // Here, logic for token swap would be implemented. For simulation:
-            document.getElementById('swap-status').innerText = "Swapped: 100 SNOWDN for 100,000 KSDOG.";
-            transactionDetected = false;  // Reset after swap
-            document.getElementById('initiate-swap').disabled = true;
-        } catch (error) {
-            document.getElementById('swap-status').innerText = "Error: Invalid password or key.";
+async function connectWallet() {
+    document.getElementById('status').innerText = "Connecting...";
+    try {
+        const accounts = await window.kasware.requestAccounts();
+        if (accounts.length > 0) {
+            document.getElementById('status').innerText = `Connected with account: ${accounts[0]}`;
+            document.getElementById('connectBtn').disabled = true;
+            document.getElementById('swapPanel').style.display = 'block';
+            // Notify backend of connection
+            await notifyBackendOfConnection(accounts[0]);
+        } else {
+            document.getElementById('status').innerText = "No accounts found.";
         }
-    } else {
-        document.getElementById('swap-status').innerText = "Password required for swap.";
+    } catch (error) {
+        document.getElementById('status').innerText = "Failed to connect: " + error.message;
+        console.error("Connection error:", error);
     }
 }
 
-// For testing, allow manual transaction checking
-document.getElementById('check-transaction').addEventListener('click', checkForTransaction);
-document.getElementById('initiate-swap').addEventListener('click', simulateTokenSwap);
+async function notifyBackendOfConnection(wallet) {
+    try {
+        await window.kasware.send('backendConnect', { wallet: wallet });
+    } catch (error) {
+        console.error("Failed to notify backend:", error);
+    }
+}
+
+function handleSwapConfirmation(data) {
+    document.getElementById('swapStatus').innerText = `Swap Confirmed. Transaction ID: ${data.txid}`;
+}
+
+function handleAccountsChanged(accounts) {
+    if (accounts.length === 0) {
+        console.log("Please connect to KasWare Wallet.");
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('status').innerText = "No account connected.";
+    } else {
+        document.getElementById('status').innerText = `Account changed to: ${accounts[0]}`;
+        console.log("Account changed:", accounts);
+    }
+}
+
+function handleNetworkChanged(network) {
+    console.log("Network changed:", network);
+    document.getElementById('status').innerText = `Network changed to: ${network}`;
+}
