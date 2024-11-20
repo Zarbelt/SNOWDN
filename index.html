@@ -1,65 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Keep your existing head content -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNOWDN & KSDOG Token Exchanger</title>
+  <style>
+    /* ... (Keep the existing CSS) ... */
+  </style>
 </head>
 <body>
-  <!-- Keep your existing body content -->
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      checkKasWareWallet();
-    });
-
-    function checkKasWareWallet() {
-      if (typeof window.kasware !== 'undefined') {
-        document.getElementById('status').innerText = "KasWare Wallet Detected!";
-        document.getElementById('connectBtn').addEventListener('click', connectWallet);
-      } else {
-        document.getElementById('status').innerText = "Please install KasWare Wallet extension.";
-      }
-    }
-
-    async function connectWallet() {
-      try {
-        document.getElementById('status').innerText = "Connecting...";
-        const accounts = await window.kasware.requestAccounts();
-        if (accounts.length > 0) {
-          document.getElementById('status').innerText = `Connected with account: ${accounts[0]}`;
-          document.getElementById('connectBtn').disabled = true;
-          document.getElementById('swapPanel').style.display = 'block';
-        } else {
-          document.getElementById('status').innerText = "No accounts found.";
-        }
-      } catch (error) {
-        document.getElementById('status').innerText = "Failed to connect: " + error.message;
-        console.error("Connection error:", error);
-      }
-    }
-
-    // Keep your existing swapTokens function and other utilities
-
-    // Event listeners for wallet changes
-    if (typeof window.kasware !== 'undefined') {
-      window.kasware.on('accountsChanged', handleAccountsChanged);
-      window.kasware.on('networkChanged', handleNetworkChanged);
-    }
-
-    function handleAccountsChanged(accounts) {
-      if (accounts.length === 0) {
-        console.log("Please connect to KasWare Wallet.");
-        document.getElementById('connectBtn').disabled = false;
-        document.getElementById('status').innerText = "No account connected.";
-      } else {
-        document.getElementById('status').innerText = `Account changed to: ${accounts[0]}`;
-        console.log("Account changed:", accounts);
-      }
-    }
-
-    function handleNetworkChanged(network) {
-      console.log("Network changed:", network);
-      document.getElementById('status').innerText = `Network changed to: ${network}`;
-    }
-  </script>
+  <div class="container">
+    <h1>SNOWDN & KSDOG Token Exchanger</h1>
+    <p id="status">Status: Not Connected</p>
+    <button id="connectBtn">Connect KasWare Wallet</button>
+    <div id="swapPanel" style="display: none;">
+      <!-- ... (Keep the existing HTML for the swap panel) ... -->
+    </div>
+  </div>
+  <script src="exchange.js"></script>
+  <script src="ui.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>
