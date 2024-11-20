@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KSDOG to SNOWDN Swapper</title>
+  <title>KRC20 Token Swapper with KasWare</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -46,30 +46,34 @@
 </head>
 <body>
   <div class="container">
-    <h1>KSDOG to SNOWDN Swapper</h1>
+    <h1>KRC20 Token Swapper</h1>
     <p id="status">Status: Not Connected</p>
     <button id="connectBtn" onclick="connectWallet()">Connect KasWare Wallet</button>
     <div id="swapPanel" style="display: none;">
-      <label for="ksdogAmount">KSDOG Amount:</label>
-      <input type="number" id="ksdogAmount" placeholder="Amount" required>
+      <label for="fromToken">From Token:</label>
+      <input type="text" id="fromToken" placeholder="Token Address" required>
       <br>
-      <button id="swapBtn" onclick="swapTokens()">Swap to SNOWDN</button>
+      <label for="toToken">To Token:</label>
+      <input type="text" id="toToken" placeholder="Token Address" required>
+      <br>
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" placeholder="Amount" required>
+      <br>
+      <button id="swapBtn" onclick="swapTokens()">Swap Tokens</button>
       <p id="swapResult"></p>
     </div>
   </div>
   <script>
+    // Wait for the DOM to load before checking for KasWare
     document.addEventListener('DOMContentLoaded', function() {
       checkKasWareWallet();
     });
-
-    const KSDOG_TOKEN_ADDRESS = 'KSDOG_CONTRACT_ADDRESS_HERE';
-    const SNOWDN_TOKEN_ADDRESS = 'SNOWDN_CONTRACT_ADDRESS_HERE';
-    const SWAP_CONTRACT_ADDRESS = 'SWAP_CONTRACT_ADDRESS_IF_EXISTS';
 
     function checkKasWareWallet() {
       if (typeof window.kasware !== 'undefined') {
         document.getElementById('status').innerText = "KasWare Wallet Detected!";
         document.getElementById('connectBtn').disabled = false;
+        // Set up event listeners for wallet changes
         window.kasware.on('accountsChanged', handleAccountsChanged);
         window.kasware.on('networkChanged', handleNetworkChanged);
       } else {
@@ -95,70 +99,35 @@
         });
     }
 
-    async function getTokenDecimals(tokenAddress) {
-      try {
-        let result = await window.kasware.callKRC20Method(tokenAddress, 'decimals');
-        return parseInt(result);
-      } catch (error) {
-        console.error('Failed to get decimals:', error);
-        return 0; // Default to 0 if unable to fetch
-      }
-    }
-
-    async function approveToken(tokenAddress, amount, spender) {
-      const approveData = window.kasware.encodeKRC20Method('approve', [spender, amount]);
-      try {
-        await window.kasware.signKRC20Transaction(JSON.stringify({
-          p: "KRC-20",
-          op: "custom",
-          to: tokenAddress,
-          data: approveData
-        }), 4);
-      } catch (error) {
-        console.error('Approval failed:', error);
-        throw new Error('Approval failed');
-      }
-    }
-
-    async function swapTokens() {
-      const ksdogAmount = document.getElementById('ksdogAmount').value;
-      const snowdnAmount = ksdogAmount / 1000; // Exchange rate 1 SNOWDN = 1000 KSDOG
-
-      if (!ksdogAmount || isNaN(ksdogAmount) || ksdogAmount <= 0) {
-        document.getElementById('swapResult').innerText = "Please enter a valid amount of KSDOG.";
-        return;
-      }
+    function swapTokens() {
+      const fromToken = document.getElementById('fromToken').value;
+      const toToken = document.getElementById('toToken').value;
+      const amount = document.getElementById('amount').value;
 
       document.getElementById('status').innerText = "Swapping...";
       document.getElementById('swapBtn').disabled = true;
 
-      try {
-        const ksdogDecimals = await getTokenDecimals(KSDOG_TOKEN_ADDRESS);
-        const snowdnDecimals = await getTokenDecimals(SNOWDN_TOKEN_ADDRESS);
-        const ksdogAmountInWei = (ksdogAmount * Math.pow(10, ksdogDecimals)).toString();
-        const snowdnAmountInWei = (snowdnAmount * Math.pow(10, snowdnDecimals)).toString();
+      const transferJsonString = JSON.stringify({
+        p: "KRC-20",
+        op: "transfer",
+        tick: fromToken,  // Assuming 'tick' is used as an identifier for the token
+        amt: amount,
+        to: toToken  // Assuming 'to' is the recipient address
+      });
 
-        // Approve KSDOG tokens to be spent by the swap contract
-        await approveToken(KSDOG_TOKEN_ADDRESS, ksdogAmountInWei, SWAP_CONTRACT_ADDRESS);
-
-        // Perform the swap (this assumes there's a swap contract, adjust if not)
-        const swapData = window.kasware.encodeKRC20Method('swap', [KSDOG_TOKEN_ADDRESS, ksdogAmountInWei, SNOWDN_TOKEN_ADDRESS, snowdnAmountInWei]);
-        const txid = await window.kasware.signKRC20Transaction(JSON.stringify({
-          p: "KRC-20",
-          op: "custom",
-          to: SWAP_CONTRACT_ADDRESS,
-          data: swapData
-        }), 4);
-
-        document.getElementById('status').innerText = "Swap Successful";
-        document.getElementById('swapResult').innerText = `You have swapped ${ksdogAmount} KSDOG for ${snowdnAmount} SNOWDN. TXID: ${txid}`;
-      } catch (error) {
-        document.getElementById('status').innerText = "Swap Failed";
-        document.getElementById('swapResult').innerText = `Error: ${error.message}`;
-        console.error("Swap error:", error);
-      } finally {
-        document.getElementById('swapBtn').disabled = false;
-      }
+      window.kasware.signKRC20Transaction(transferJsonString, 4, toToken)
+        .then(txid => {
+          document.getElementById('status').innerText = "Swap Successful";
+          document.getElementById('swapResult').innerText = `Transaction ID: ${txid}`;
+        })
+        .catch(error => {
+          document.getElementById('status').innerText = "Swap Failed";
+          document.getElementById('swapResult').innerText = `Error: ${error.message}`;
+          console.error("Swap error:", error);
+        })
+        .finally(() => {
+          document.getElementById('swapBtn').disabled = false;
+        });
     }
 
     function handleAccountsChanged(accounts) {
