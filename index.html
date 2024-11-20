@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kaspa Token Swap Beta</title>
+    <title>KRC20 Token Swapper with KasWare</title>
     <style>
-        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-        #swap-status { font-size: 16px; font-weight: bold; color: #007BFF; margin-bottom: 10px; }
-        button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
+        /* Your CSS styles here */
     </style>
 </head>
 <body>
-    <div id="swap-status">No transaction detected.</div>
-    <button id="check-transaction" onclick="checkForTransaction()">Check for Transaction</button>
-    <button id="initiate-swap" onclick="simulateTokenSwap()" disabled>Initiate Swap</button>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <div class="container">
+        <h1>KRC20 Token Swapper</h1>
+        <p id="status">Status: Not Connected</p>
+        <button id="connectBtn" onclick="connectWallet()">Connect KasWare Wallet</button>
+        <div id="swapPanel" style="display: none;">
+            <p>Send 100 SNOWDN to <strong>kaspa:qpq3lm3u94cwl0x6grr3g52ljuqvkz47anpru7x359rpscu4hymgq3ruj8d94</strong> for swapping.</p>
+            <p id="swapStatus"></p>
+        </div>
+    </div>
     <script src="main.js"></script>
 </body>
 </html>
